@@ -54,6 +54,13 @@ func GetClusterSnapshot(
 	}
 	snapshot.Nodes = nodes
 
+	// Node Runtimes
+	runtimes, err := ListNodeRuntimes(ctx, client)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list node runtimes: %w", err)
+	}
+	snapshot.NodeRuntimes = runtimes
+
 	// Namespaces
 	namespaces, err := ListNamespaces(ctx, client)
 	if err != nil {
@@ -158,6 +165,18 @@ func GetClusterSnapshot(
 		return nil, fmt.Errorf("failed to list storage classes: %w", err)
 	}
 	snapshot.StorageClasses = storageClasses
+
+	endpointSlices, err := ListEndpointSlices(ctx, client)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list endpoint slices: %w", err)
+	}
+	snapshot.EndpointSlices = endpointSlices
+
+	endpoints, err := ListAPIEndpoints(client)
+	if err != nil {
+		return nil, fmt.Errorf("failed to list api endpoints: %w", err)
+	}
+	snapshot.APIEndpoints = endpoints
 
 	return snapshot, nil
 }

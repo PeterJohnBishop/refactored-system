@@ -18,6 +18,10 @@ func main() {
 		log.Fatalf("Failed to connect to Kubernetes: %v", err)
 	}
 
+	version, _ := clientset.Discovery().ServerVersion()
+
+	fmt.Println(version.GitVersion)
+
 	ctx, cancel := context.WithTimeout(
 		context.Background(),
 		30*time.Second,
@@ -38,4 +42,7 @@ func main() {
 	fmt.Printf("PVs: %d\n", len(snapshot.PVs))
 	fmt.Printf("Jobs: %d\n", len(snapshot.Jobs))
 	fmt.Printf("CronJobs: %d\n", len(snapshot.CronJobs))
+	fmt.Printf("Runtimes: %d\n", len(snapshot.NodeRuntimes))
+	fmt.Printf("Endpoints: %d\n", len(snapshot.APIEndpoints))
+	fmt.Printf("Endpoint Slices: %d\n", len(snapshot.EndpointSlices))
 }

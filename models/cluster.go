@@ -5,11 +5,14 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
+	discoveryv1 "k8s.io/api/discovery/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	storagev1 "k8s.io/api/storage/v1"
 )
 
 type ClusterSnapshot struct {
+	NodeRuntimes []NodeRuntimeInfo
+
 	Nodes           []corev1.Node
 	Namespaces      []corev1.Namespace
 	Pods            []corev1.Pod
@@ -29,4 +32,9 @@ type ClusterSnapshot struct {
 
 	Ingresses      []networkingv1.Ingress
 	StorageClasses []storagev1.StorageClass
+
+	APIEndpoints   []APIEndpoint
+	EndpointSlices []discoveryv1.EndpointSlice
+
+	EtcdPods []corev1.Pod
 }
