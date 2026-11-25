@@ -36,5 +36,5 @@ type ClusterSnapshot struct {
 	APIEndpoints   []APIEndpoint
 	EndpointSlices []discoveryv1.EndpointSlice
 
-	EtcdPods []corev1.Pod
+	Core *CoreComponents
 }

@@ -12,13 +12,14 @@ import (
 	networkingv1 "k8s.io/api/networking/v1"
 	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
-// NewKubesvcClient initializes and returns a Kubernetes clientset.
-func NewKubesvcClient() (*kubernetes.Clientset, error) {
-	// Load kubeconfig using the active kubectl context.
+// loadConfig loads the kubeconfig using the active kubectl context.
+func loadConfig() (*rest.Config, error) {
 	rules := clientcmd.NewDefaultClientConfigLoadingRules()
 
 	config, err := clientcmd.
@@ -31,13 +32,20 @@ func NewKubesvcClient() (*kubernetes.Clientset, error) {
 		return nil, err
 	}
 
-	// Create the Kubernetes client.
-	clientset, err := kubernetes.NewForConfig(config)
+	// Silence server deprecation warnings (e.g. ComponentStatus).
+	config.WarningHandler = rest.NoWarnings{}
+
+	return config, nil
+}
+
+// NewKubesvcClient initializes and returns a Kubernetes clientset.
+func NewKubesvcClient() (*kubernetes.Clientset, error) {
+	config, err := loadConfig()
 	if err != nil {
 		return nil, err
 	}
 
-	return clientset, nil
+	return kubernetes.NewForConfig(config)
 }
 
 // GetClusterSnapshot retrieves all supported Kubernetes resources.
@@ -172,11 +180,20 @@ func GetClusterSnapshot(
 	}
 	snapshot.EndpointSlices = endpointSlices
 
+	// An unavailable aggregated API (e.g. metrics-server still
+	// starting) yields partial results, which are fine to keep.
 	endpoints, err := ListAPIEndpoints(client)
-	if err != nil {
+	if err != nil && !discovery.IsGroupDiscoveryFailedError(err) {
 		return nil, fmt.Errorf("failed to list api endpoints: %w", err)
 	}
 	snapshot.APIEndpoints = endpoints
+
+	// Core components: partial data is kept on error.
+	core, err := GetCoreComponents(ctx, client)
+	if err != nil && core == nil {
+		return nil, fmt.Errorf("failed to get core components: %w", err)
+	}
+	snapshot.Core = core
 
 	return snapshot, nil
 }
